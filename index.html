@@ -1,0 +1,1810 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>CineVault – Physische Film- & Seriendatenbank</title>
+    <style>
+        :root {
+            --bg-main: #0f1117;
+            --bg-card: #1a1d26;
+            --bg-input: #252936;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --border: #2e3344;
+            --badge-4k: #d97706;
+            --badge-bluray: #2563eb;
+            --badge-hddvd: #991b1b;
+            --badge-dvd: #4b5563;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header & Navigation */
+        header {
+            background-color: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo span {
+            color: var(--accent);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        button, a.btn-link {
+            background-color: var(--bg-input);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 0.6rem 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            text-decoration: none;
+        }
+
+        button:hover, a.btn-link:hover {
+            background-color: #323849;
+        }
+
+        button.primary, a.btn-link.primary {
+            background-color: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        button.primary:hover, a.btn-link.primary:hover {
+            background-color: var(--accent-hover);
+        }
+
+        button.danger {
+            background-color: #7f1d1d;
+            border-color: #991b1b;
+        }
+
+        button.danger:hover {
+            background-color: #991b1b;
+        }
+
+        /* Filter- & Suchleiste */
+        .controls-bar {
+            background-color: var(--bg-card);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+            gap: 1rem;
+        }
+
+        .sort-group {
+            display: flex;
+            gap: 0.4rem;
+        }
+
+        .sort-dir-btn {
+            padding: 0.6rem 0.75rem;
+            flex-shrink: 0;
+        }
+
+        input, select, textarea {
+            background-color: var(--bg-input);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 0.6rem 0.9rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            width: 100%;
+            outline: none;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent);
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            padding: 0.75rem 2rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        /* Grid Ansicht */
+        main {
+            padding: 1.5rem 2rem;
+            flex: 1;
+        }
+
+        .series-section {
+            margin-bottom: 2.5rem;
+        }
+
+        .series-header {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #e5e7eb;
+        }
+
+        .series-count {
+            font-size: 0.8rem;
+            background: var(--bg-input);
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            color: var(--text-muted);
+        }
+
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .media-card {
+            background-color: var(--bg-card);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .media-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5);
+            border-color: var(--accent);
+        }
+
+        .poster-wrapper {
+            position: relative;
+            aspect-ratio: 2 / 3;
+            background-color: #13151c;
+            overflow: hidden;
+        }
+
+        .poster-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .format-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 0.2rem 0.5rem;
+            border-radius: 5px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+        }
+
+        .fmt-4K { background-color: var(--badge-4k); color: #fff; }
+        .fmt-Blu-ray { background-color: var(--badge-bluray); color: #fff; }
+        .fmt-HD-DVD { background-color: var(--badge-hddvd); color: #fff; }
+        .fmt-DVD { background-color: var(--badge-dvd); color: #fff; }
+
+        .res-badge {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            background: rgba(15, 17, 23, 0.85);
+            backdrop-filter: blur(4px);
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .card-info {
+            padding: 0.85rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            line-height: 1.3;
+            margin-bottom: 0.35rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Modals */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+            z-index: 1000;
+        }
+
+        .modal-backdrop.active {
+            display: flex;
+        }
+
+        .modal {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            max-width: 780px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 1.75rem;
+            position: relative;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0 0.4rem;
+        }
+
+        .close-btn:hover { color: white; background: none; }
+
+        /* Scanner & API Box */
+        .scanner-box {
+            background: linear-gradient(135deg, #1e2433, #191e2b);
+            border: 1px dashed var(--accent);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1.25rem;
+        }
+
+        .scanner-box label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 0.4rem;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .input-group input {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .camera-scanner-panel {
+            margin-top: 0.75rem;
+            background: #0d1017;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.75rem;
+            display: none;
+        }
+
+        .camera-scanner-panel.active {
+            display: block;
+        }
+
+        .camera-viewport {
+            position: relative;
+            width: 100%;
+            max-height: 260px;
+            aspect-ratio: 16 / 9;
+            background: #050608;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .camera-viewport video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .scan-reticle {
+            position: absolute;
+            left: 10%;
+            right: 10%;
+            top: 50%;
+            height: 2px;
+            background: rgba(59, 130, 246, 0.85);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.9);
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        .camera-controls {
+            margin-top: 0.6rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* Formular Grid */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        /* API Suchergebnisse Dropdown */
+        .search-results {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .search-result-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .search-result-item:hover {
+            background: #323849;
+        }
+
+        .search-result-item img {
+            width: 32px;
+            height: 48px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        /* Detailansicht Modal */
+        .detail-layout {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            gap: 1.75rem;
+        }
+
+        .detail-poster img {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+        }
+
+        .detail-specs {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin: 1rem 0;
+            background: var(--bg-input);
+            padding: 1rem;
+            border-radius: 10px;
+        }
+
+        .spec-item span {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .spec-item strong {
+            font-size: 0.95rem;
+        }
+
+        .detail-overview {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #d1d5db;
+            margin-top: 1rem;
+        }
+
+        .trailer-section {
+            margin-top: 1.25rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .trailer-embed-wrapper {
+            margin-top: 0.85rem;
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: #090b0f;
+            display: none;
+        }
+
+        .trailer-embed-wrapper.active {
+            display: block;
+        }
+
+        .trailer-embed-wrapper iframe,
+        .trailer-embed-wrapper #ytPlayerTarget {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        @media (max-width: 650px) {
+            header, .controls-bar, .stats-bar, main {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            .detail-layout, .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .detail-poster {
+                max-width: 180px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">🎬 Cine<span>Vault</span></div>
+    <div class="header-actions">
+        <button class="primary" onclick="openAddModal()">+ Medium / Scan hinzufügen</button>
+        <button onclick="openSettingsModal()">⚙️ API & Backup</button>
+    </div>
+</header>
+
+<!-- Filter- und Suchleiste -->
+<section class="controls-bar">
+    <input type="text" id="searchInput" placeholder="🔍 Titel, Reihe, Barcode oder Audio suchen..." oninput="renderMedia()">
+    
+    <select id="filterType" onchange="renderMedia()">
+        <option value="ALL">Alle Typen (Filme & Serien)</option>
+        <option value="Film">Nur Filme</option>
+        <option value="Serie">Nur Serien</option>
+    </select>
+
+    <select id="filterFormat" onchange="renderMedia()">
+        <option value="ALL">Alle Formate</option>
+        <option value="4K">4K Ultra HD</option>
+        <option value="Blu-ray">Blu-ray</option>
+        <option value="HD-DVD">HD DVD</option>
+        <option value="DVD">DVD</option>
+    </select>
+
+    <select id="filterResolution" onchange="renderMedia()">
+        <option value="ALL">Alle Auflösungen</option>
+        <option value="2160p">2160p (4K UHD)</option>
+        <option value="1080p">1080p (Full HD)</option>
+        <option value="720p">720p (HD)</option>
+        <option value="576p">576p / 480p (SD)</option>
+    </select>
+
+    <div class="sort-group">
+        <select id="sortBySelect" onchange="renderMedia()" aria-label="Sortieren nach">
+            <option value="DEFAULT">Sortierung: Hinzugefügt</option>
+            <option value="YEAR">Sortierung: Erscheinungsjahr</option>
+            <option value="TITLE">Sortierung: Alphabetisch (Titel)</option>
+            <option value="RESOLUTION">Sortierung: Auflösung</option>
+            <option value="FORMAT">Sortierung: Format</option>
+        </select>
+        <button type="button" id="sortDirBtn" class="sort-dir-btn" onclick="toggleSortDirection()" title="Sortierrichtung wechseln">↑ Aufsteigend</button>
+    </div>
+
+    <select id="groupBySelect" onchange="renderMedia()">
+        <option value="NONE">Ansicht: Alle einzeln</option>
+        <option value="SERIES">Ansicht: Nach Film-/Serienreihe gruppieren</option>
+    </select>
+</section>
+
+<div class="stats-bar">
+    <span id="statsText">0 Medien in der Sammlung</span>
+    <span id="apiStatusHint"></span>
+</div>
+
+<main id="mediaContainer"></main>
+
+<!-- MODAL: Medium hinzufügen / bearbeiten -->
+<div class="modal-backdrop" id="addModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 id="modalTitle">Neues Medium hinzufügen</h2>
+            <button class="close-btn" onclick="closeModal('addModal')">&times;</button>
+        </div>
+
+        <!-- Barcode Handscanner, Kamera & Online-Suche -->
+        <div class="scanner-box">
+            <label for="barcodeInput">📷 Handy-Kamera / Handscanner (EAN / UPC Barcode) oder Online-Suche:</label>
+            <div class="input-group" style="margin-bottom: 0.6rem;">
+                <input type="text" id="barcodeInput" inputmode="numeric" placeholder="Barcode scannen (Enter) oder eintippen..." onkeydown="handleBarcodeKey(event)">
+                <button type="button" class="primary" onclick="lookupBarcode()">Barcode suchen</button>
+                <button type="button" id="cameraToggleBtn" onclick="toggleCameraScanner()">📷 Kamera</button>
+            </div>
+
+            <div class="camera-scanner-panel" id="cameraScannerPanel">
+                <div class="camera-viewport">
+                    <video id="cameraVideo" playsinline muted autoplay></video>
+                    <div class="scan-reticle"></div>
+                </div>
+                <div class="camera-controls">
+                    <span id="cameraStatus" style="font-size: 0.8rem; color: var(--text-muted);">Kamera wird gestartet...</span>
+                    <button type="button" onclick="stopCameraScanner()">Kamera aus</button>
+                </div>
+            </div>
+
+            <div class="input-group" style="margin-top: 0.6rem;">
+                <input type="text" id="onlineSearchInput" placeholder="Filmtitel für automatische TMDB-Daten & Cover eingeben..." onkeydown="if(event.key==='Enter') searchTMDB()">
+                <button type="button" onclick="searchTMDB()">🔍 TMDB Suchen</button>
+            </div>
+            <div id="statusMessage" style="font-size: 0.8rem; margin-top: 0.4rem; color: #93c5fd;"></div>
+            <div class="search-results" id="tmdbResults"></div>
+        </div>
+
+        <form id="mediaForm" onsubmit="saveMedia(event)">
+            <input type="hidden" id="editId">
+            <input type="hidden" id="tmdbId">
+            <input type="hidden" id="tmdbMediaType">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Titel *</label>
+                    <input type="text" id="title" required>
+                </div>
+                <div class="form-group">
+                    <label>Typ *</label>
+                    <select id="type">
+                        <option value="Film">Film</option>
+                        <option value="Serie">Serie</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Film- / Serienreihe (für Gruppierung)</label>
+                    <input type="text" id="seriesGroup" list="existingSeries" placeholder="z.B. Star Wars, Marvel, Breaking Bad">
+                    <datalist id="existingSeries"></datalist>
+                </div>
+                <div class="form-group">
+                    <label>Barcode (EAN / UPC)</label>
+                    <input type="text" id="barcode" placeholder="z.B. 4059251234567">
+                </div>
+                <div class="form-group">
+                    <label>Disc-Format *</label>
+                    <select id="format" onchange="autoSetResolution()">
+                        <option value="4K">4K Ultra HD</option>
+                        <option value="Blu-ray" selected>Blu-ray</option>
+                        <option value="HD-DVD">HD DVD</option>
+                        <option value="DVD">DVD</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Auflösung *</label>
+                    <select id="resolution">
+                        <option value="2160p">2160p (4K UHD)</option>
+                        <option value="1080p" selected>1080p (Full HD)</option>
+                        <option value="720p">720p (HD)</option>
+                        <option value="576p">576p / 480p (SD)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Erscheinungsjahr</label>
+                    <input type="number" id="year" placeholder="z.B. 2024">
+                </div>
+                <div class="form-group">
+                    <label>Laufzeit (Minuten / Staffeln)</label>
+                    <input type="text" id="runtime" placeholder="z.B. 142 Min. oder 5 Staffeln">
+                </div>
+                <div class="form-group">
+                    <label>Audioformat</label>
+                    <input type="text" id="audio" placeholder="z.B. Dolby Atmos, DTS-HD MA 5.1">
+                </div>
+                <div class="form-group">
+                    <label>Cover Bild-URL</label>
+                    <input type="url" id="posterUrl" placeholder="https://...">
+                </div>
+                <div class="form-group full">
+                    <label>Beschreibung / Notizen (z.B. Steelbook, Mediabook, HDR10/Dolby Vision)</label>
+                    <textarea id="overview" rows="3"></textarea>
+                </div>
+            </div>
+            <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button type="button" onclick="closeModal('addModal')">Abbrechen</button>
+                <button type="submit" class="primary">Speichern</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: Detailkachel -->
+<div class="modal-backdrop" id="detailModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 id="detailTitle">Titel</h2>
+            <button class="close-btn" onclick="closeModal('detailModal')">&times;</button>
+        </div>
+        <div class="detail-layout">
+            <div class="detail-poster">
+                <img id="detailPoster" src="" alt="Cover">
+            </div>
+            <div>
+                <div id="detailBadges" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+                <div class="detail-specs">
+                    <div class="spec-item"><span>Erscheinungsjahr</span><strong id="detailYear">-</strong></div>
+                    <div class="spec-item"><span>Laufzeit</span><strong id="detailRuntime">-</strong></div>
+                    <div class="spec-item"><span>Format</span><strong id="detailFormat">-</strong></div>
+                    <div class="spec-item"><span>Auflösung</span><strong id="detailResolution">-</strong></div>
+                    <div class="spec-item"><span>Audioformat</span><strong id="detailAudio">-</strong></div>
+                    <div class="spec-item"><span>Film- / Serienreihe</span><strong id="detailSeries">-</strong></div>
+                    <div class="spec-item" style="grid-column: 1 / -1;"><span>Barcode / EAN</span><strong id="detailBarcode">-</strong></div>
+                </div>
+                <p class="detail-overview" id="detailOverview"></p>
+
+                <div class="trailer-section">
+                    <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center;">
+                        <button type="button" class="primary" id="detailTrailerEmbedBtn" onclick="toggleTrailerEmbed()">▶️ Trailer hier abspielen</button>
+                        <a class="btn-link" id="detailYoutubeWatchLink" href="#" target="_blank" rel="noopener noreferrer">📺 Auf YouTube öffnen</a>
+                        <span id="detailTrailerStatus" style="font-size: 0.8rem; color: var(--text-muted);"></span>
+                    </div>
+                    <div class="trailer-embed-wrapper" id="trailerEmbedWrapper">
+                        <div id="ytPlayerTarget"></div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem;">
+                    <button class="primary" id="detailEditBtn">✏️ Bearbeiten</button>
+                    <button class="danger" id="detailDeleteBtn">🗑️ Löschen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Einstellungen & Backup -->
+<div class="modal-backdrop" id="settingsModal">
+    <div class="modal" style="max-width: 520px;">
+        <div class="modal-header">
+            <h2>API-Konfiguration & Datensicherung</h2>
+            <button class="close-btn" onclick="closeModal('settingsModal')">&times;</button>
+        </div>
+        <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label>TMDB API-Key (v3 auth) für automatische Cover, Filmdaten & YouTube-Trailer:</label>
+            <input type="text" id="tmdbApiKeyInput" placeholder="Deinen kostenlosen TMDB API-Key einfügen...">
+            <small style="color: var(--text-muted); margin-top: 0.3rem;">
+                Kostenlos erhältlich unter <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer" style="color: var(--accent);">themoviedb.org</a>. Wird nur lokal im Browser gespeichert.
+            </small>
+        </div>
+        <button class="primary" onclick="saveSettings()" style="width: 100%; justify-content: center; margin-bottom: 1.5rem;">API-Key speichern</button>
+
+        <hr style="border-color: var(--border); margin-bottom: 1.5rem;">
+        
+        <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Datenbank Export / Import (JSON-Backup):</label>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <button onclick="exportData()" style="flex: 1; justify-content: center;">⬇️ Exportieren</button>
+            <button onclick="document.getElementById('importFile').click()" style="flex: 1; justify-content: center;">⬆️ Importieren</button>
+            <button onclick="loadRepoBackupIfPresent()" style="flex: 1; justify-content: center;">🔄 Repo-Backup</button>
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialdaten (Beispiele, falls Datenbank leer ist)
+    const defaultMedia = [
+        {
+            id: '1',
+            title: 'Dune: Part Two',
+            type: 'Film',
+            seriesGroup: 'Dune',
+            barcode: '5051890339829',
+            format: '4K',
+            resolution: '2160p',
+            year: '2024',
+            runtime: '166 Min.',
+            audio: 'Dolby Atmos, TrueHD 7.1',
+            posterUrl: 'https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg',
+            overview: 'Paul Atreides verbündet sich mit Chani und den Fremen, während er auf einem Rachefeldzug gegen die Verschwörer ist, die seine Familie zerstört haben.',
+            tmdbId: '693134',
+            tmdbMediaType: 'movie'
+        },
+        {
+            id: '2',
+            title: 'Dune',
+            type: 'Film',
+            seriesGroup: 'Dune',
+            barcode: '5051890328410',
+            format: '4K',
+            resolution: '2160p',
+            year: '2021',
+            runtime: '155 Min.',
+            audio: 'Dolby Atmos',
+            posterUrl: 'https://image.tmdb.org/t/p/w500/d5NXSklXo0qyIYkgV94XAgMIckC.jpg',
+            overview: 'Der junge Paul Atreides muss auf den gefährlichsten Planeten des Universums reisen, um die Zukunft seiner Familie und seines Volkes zu sichern.',
+            tmdbId: '438631',
+            tmdbMediaType: 'movie'
+        },
+        {
+            id: '3',
+            title: 'Breaking Bad - Die komplette Serie',
+            type: 'Serie',
+            seriesGroup: 'Breaking Bad Universum',
+            barcode: '4030521734821',
+            format: 'Blu-ray',
+            resolution: '1080p',
+            year: '2008',
+            runtime: '5 Staffeln (62 Episoden)',
+            audio: 'DTS-HD Master Audio 5.1',
+            posterUrl: 'https://image.tmdb.org/t/p/w500/ztkUQFLlC19CCMYHW9o1zWhJRNq.jpg',
+            overview: 'Ein krebskranker Chemielehrer tut sich mit einem ehemaligen Schüler zusammen, um durch die Herstellung von Crystal Meth die Zukunft seiner Familie abzusichern.',
+            tmdbId: '1396',
+            tmdbMediaType: 'tv'
+        }
+    ];
+
+    let mediaList = JSON.parse(localStorage.getItem('cinevault_media')) || defaultMedia;
+    let tmdbApiKey = localStorage.getItem('cinevault_tmdb_key') || '';
+    let sortAscending = true;
+    let currentTrailerKey = '';
+    let currentDetailItem = null;
+    let ytPlayer = null;
+    let ytApiReady = false;
+    let pendingTrailerVideoId = '';
+
+    // Kamera-Scanner State
+    let cameraStream = null;
+    let cameraScanTimer = null;
+    let zxingReader = null;
+    let zxingLoadingPromise = null;
+
+    const fallbackPoster = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450"><rect width="300" height="450" fill="%231e222d"/><text x="50%" y="50%" fill="%236b7280" font-family="sans-serif" font-size="20" text-anchor="middle">Kein Cover</text></svg>';
+
+    const resolutionRank = {
+        '2160p': 4,
+        '1080p': 3,
+        '720p': 2,
+        '576p': 1
+    };
+
+    const formatRank = {
+        '4K': 4,
+        'Blu-ray': 3,
+        'HD-DVD': 2,
+        'DVD': 1
+    };
+
+    // YouTube IFrame Player API asynchron laden
+    (function loadYouTubeIframeApi() {
+        if (window.YT && window.YT.Player) {
+            ytApiReady = true;
+            return;
+        }
+        const tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    })();
+
+    window.onYouTubeIframeAPIReady = function() {
+        ytApiReady = true;
+        if (pendingTrailerVideoId) {
+            const videoId = pendingTrailerVideoId;
+            pendingTrailerVideoId = '';
+            createOrLoadYtPlayer(videoId);
+        }
+    };
+
+    function resetYtPlayerTarget() {
+        const wrapper = document.getElementById('trailerEmbedWrapper');
+        if (ytPlayer && typeof ytPlayer.destroy === 'function') {
+            try {
+                ytPlayer.destroy();
+            } catch (err) {
+                // Ignorieren beim Zurücksetzen
+            }
+            ytPlayer = null;
+        }
+        wrapper.innerHTML = '<div id="ytPlayerTarget"></div>';
+    }
+
+    function createOrLoadYtPlayer(videoId) {
+        const status = document.getElementById('detailTrailerStatus');
+        if (!ytApiReady || !window.YT || !window.YT.Player) {
+            pendingTrailerVideoId = videoId;
+            status.textContent = '⏳ Lade YouTube IFrame API...';
+            return;
+        }
+
+        resetYtPlayerTarget();
+
+        const playerVars = {
+            autoplay: 1,
+            rel: 0,
+            playsinline: 1
+        };
+        if (window.location.origin && window.location.origin.startsWith('http')) {
+            playerVars.origin = window.location.origin;
+        }
+
+        ytPlayer = new window.YT.Player('ytPlayerTarget', {
+            videoId: videoId,
+            playerVars: playerVars,
+            events: {
+                onReady: function(event) {
+                    const iframe = event.target.getIframe && event.target.getIframe();
+                    if (iframe) {
+                        iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+                    }
+                    event.target.playVideo();
+                },
+                onError: function(event) {
+                    status.textContent = `⚠️ YouTube-Player-Fehler (${event.data}) – bitte „Auf YouTube öffnen“ nutzen.`;
+                }
+            }
+        });
+    }
+
+    function saveToLocalStorage() {
+        localStorage.setItem('cinevault_media', JSON.stringify(mediaList));
+        updateSeriesDatalist();
+    }
+
+    function updateApiHint() {
+        const hint = document.getElementById('apiStatusHint');
+        if (!tmdbApiKey) {
+            hint.innerHTML = '⚠️ Kein TMDB API-Key hinterlegt (für Auto-Cover & Trailer unter "API & Backup" eintragen)';
+            hint.style.color = '#fbbf24';
+        } else {
+            hint.innerHTML = '✅ TMDB API aktiv';
+            hint.style.color = '#34d399';
+        }
+    }
+
+    function updateSeriesDatalist() {
+        const datalist = document.getElementById('existingSeries');
+        const seriesSet = new Set(mediaList.map(m => m.seriesGroup).filter(Boolean));
+        datalist.innerHTML = Array.from(seriesSet).map(s => `<option value="${s}">`).join('');
+    }
+
+    function toggleSortDirection() {
+        sortAscending = !sortAscending;
+        const btn = document.getElementById('sortDirBtn');
+        btn.textContent = sortAscending ? '↑ Aufsteigend' : '↓ Absteigend';
+        renderMedia();
+    }
+
+    function compareMedia(a, b, sortBy) {
+        let result = 0;
+        if (sortBy === 'YEAR') {
+            const yearA = parseInt(a.year, 10) || 0;
+            const yearB = parseInt(b.year, 10) || 0;
+            result = yearA - yearB;
+        } else if (sortBy === 'TITLE') {
+            result = (a.title || '').localeCompare(b.title || '', 'de', { sensitivity: 'base' });
+        } else if (sortBy === 'RESOLUTION') {
+            result = (resolutionRank[a.resolution] || 0) - (resolutionRank[b.resolution] || 0);
+        } else if (sortBy === 'FORMAT') {
+            result = (formatRank[a.format] || 0) - (formatRank[b.format] || 0);
+        } else {
+            result = (parseInt(a.id, 10) || 0) - (parseInt(b.id, 10) || 0);
+        }
+
+        if (result === 0) {
+            result = (a.title || '').localeCompare(b.title || '', 'de', { sensitivity: 'base' });
+        }
+
+        return sortAscending ? result : -result;
+    }
+
+    // Haupt-Render-Funktion
+    function renderMedia() {
+        const container = document.getElementById('mediaContainer');
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const filterType = document.getElementById('filterType').value;
+        const filterFormat = document.getElementById('filterFormat').value;
+        const filterRes = document.getElementById('filterResolution').value;
+        const sortBy = document.getElementById('sortBySelect').value;
+        const groupBy = document.getElementById('groupBySelect').value;
+
+        const filtered = mediaList.filter(item => {
+            const matchSearch = 
+                item.title.toLowerCase().includes(search) ||
+                (item.seriesGroup && item.seriesGroup.toLowerCase().includes(search)) ||
+                (item.barcode && item.barcode.includes(search)) ||
+                (item.audio && item.audio.toLowerCase().includes(search));
+            const matchType = filterType === 'ALL' || item.type === filterType;
+            const matchFormat = filterFormat === 'ALL' || item.format === filterFormat;
+            const matchRes = filterRes === 'ALL' || item.resolution === filterRes;
+            return matchSearch && matchType && matchFormat && matchRes;
+        });
+
+        const sorted = [...filtered].sort((a, b) => compareMedia(a, b, sortBy));
+
+        document.getElementById('statsText').textContent = `${sorted.length} von ${mediaList.length} Medien angezeigt`;
+        container.innerHTML = '';
+
+        if (sorted.length === 0) {
+            container.innerHTML = `<div style="text-align:center; padding: 4rem 1rem; color: var(--text-muted);">Keine passenden Filme oder Serien gefunden.</div>`;
+            return;
+        }
+
+        if (groupBy === 'SERIES') {
+            const groups = {};
+            const ungrouped = [];
+
+            sorted.forEach(item => {
+                if (item.seriesGroup && item.seriesGroup.trim() !== '') {
+                    if (!groups[item.seriesGroup]) groups[item.seriesGroup] = [];
+                    groups[item.seriesGroup].push(item);
+                } else {
+                    ungrouped.push(item);
+                }
+            });
+
+            Object.keys(groups).sort((a, b) => a.localeCompare(b, 'de', { sensitivity: 'base' })).forEach(groupName => {
+                const section = document.createElement('div');
+                section.className = 'series-section';
+                section.innerHTML = `
+                    <div class="series-header">
+                        📁 ${escapeHtml(groupName)} 
+                        <span class="series-count">${groups[groupName].length}</span>
+                    </div>
+                `;
+                const grid = document.createElement('div');
+                grid.className = 'media-grid';
+                groups[groupName].forEach(item => {
+                    grid.appendChild(createCard(item));
+                });
+                section.appendChild(grid);
+                container.appendChild(section);
+            });
+
+            if (ungrouped.length > 0) {
+                const section = document.createElement('div');
+                section.className = 'series-section';
+                section.innerHTML = `<div class="series-header">Einzeltitel <span class="series-count">${ungrouped.length}</span></div>`;
+                const grid = document.createElement('div');
+                grid.className = 'media-grid';
+                ungrouped.forEach(item => grid.appendChild(createCard(item)));
+                section.appendChild(grid);
+                container.appendChild(section);
+            }
+        } else {
+            const grid = document.createElement('div');
+            grid.className = 'media-grid';
+            sorted.forEach(item => grid.appendChild(createCard(item)));
+            container.appendChild(grid);
+        }
+    }
+
+    function createCard(item) {
+        const card = document.createElement('div');
+        card.className = 'media-card';
+        card.onclick = () => openDetailModal(item.id);
+        
+        const fmtClass = `fmt-${item.format.replace(/\s+/g, '-')}`;
+        const poster = item.posterUrl || fallbackPoster;
+
+        card.innerHTML = `
+            <div class="poster-wrapper">
+                <img src="${poster}" alt="${escapeHtml(item.title)}" onerror="this.src='${fallbackPoster}'">
+                <span class="format-badge ${fmtClass}">${escapeHtml(item.format)}</span>
+                <span class="res-badge">${escapeHtml(item.resolution)}</span>
+            </div>
+            <div class="card-info">
+                <div class="card-title">${escapeHtml(item.title)}</div>
+                <div class="card-meta">
+                    <span>${item.year || '—'}</span>
+                    <span>${item.type}</span>
+                </div>
+            </div>
+        `;
+        return card;
+    }
+
+    // Detail-Kachel öffnen & YouTube-Trailer laden
+    async function openDetailModal(id) {
+        const item = mediaList.find(m => m.id === id);
+        if (!item) return;
+
+        currentDetailItem = item;
+        currentTrailerKey = '';
+        pendingTrailerVideoId = '';
+
+        document.getElementById('detailTitle').textContent = item.title;
+        document.getElementById('detailPoster').src = item.posterUrl || fallbackPoster;
+        document.getElementById('detailYear').textContent = item.year || 'Unbekannt';
+        document.getElementById('detailRuntime').textContent = item.runtime || 'Unbekannt';
+        document.getElementById('detailFormat').textContent = item.format;
+        document.getElementById('detailResolution').textContent = item.resolution;
+        document.getElementById('detailAudio').textContent = item.audio || 'Nicht angegeben';
+        document.getElementById('detailSeries').textContent = item.seriesGroup || 'Einzeltitel';
+        document.getElementById('detailBarcode').textContent = item.barcode || 'Kein Barcode';
+        document.getElementById('detailOverview').textContent = item.overview || 'Keine Beschreibung vorhanden.';
+
+        const fmtClass = `fmt-${item.format.replace(/\s+/g, '-')}`;
+        document.getElementById('detailBadges').innerHTML = `
+            <span class="format-badge ${fmtClass}" style="position:static;">${item.format}</span>
+            <span class="res-badge" style="position:static;">${item.resolution}</span>
+            <span class="res-badge" style="position:static;">${item.type}</span>
+        `;
+
+        const embedWrapper = document.getElementById('trailerEmbedWrapper');
+        const embedBtn = document.getElementById('detailTrailerEmbedBtn');
+        const ytLink = document.getElementById('detailYoutubeWatchLink');
+        const trailerStatus = document.getElementById('detailTrailerStatus');
+
+        embedWrapper.classList.remove('active');
+        resetYtPlayerTarget();
+        embedBtn.textContent = '▶️ Trailer hier abspielen';
+        embedBtn.style.display = 'none';
+        trailerStatus.textContent = '';
+
+        const searchQuery = encodeURIComponent(`${item.title} ${item.year || ''} official trailer`);
+        ytLink.href = `https://www.youtube.com/results?search_query=${searchQuery}`;
+        ytLink.textContent = '🔍 Auf YouTube suchen';
+
+        document.getElementById('detailEditBtn').onclick = () => {
+            closeModal('detailModal');
+            openEditModal(item.id);
+        };
+        document.getElementById('detailDeleteBtn').onclick = () => {
+            if (confirm(`"${item.title}" wirklich aus der Sammlung löschen?`)) {
+                mediaList = mediaList.filter(m => m.id !== item.id);
+                saveToLocalStorage();
+                closeModal('detailModal');
+                renderMedia();
+            }
+        };
+
+        document.getElementById('detailModal').classList.add('active');
+
+        if (tmdbApiKey) {
+            trailerStatus.textContent = '⏳ Suche Trailer...';
+            const videoInfo = await fetchTrailerFromTMDB(item);
+            if (currentDetailItem?.id !== item.id) return;
+
+            if (videoInfo && videoInfo.key) {
+                currentTrailerKey = videoInfo.key;
+                ytLink.href = `https://www.youtube.com/watch?v=${encodeURIComponent(videoInfo.key)}`;
+                ytLink.textContent = '📺 Trailer auf YouTube';
+                embedBtn.style.display = 'inline-flex';
+                trailerStatus.textContent = videoInfo.name ? `(${videoInfo.name})` : '';
+            } else {
+                trailerStatus.textContent = 'Kein direkter Trailer auf TMDB hinterlegt – YouTube-Suche verfügbar.';
+            }
+        }
+    }
+
+    async function fetchTrailerFromTMDB(item) {
+        let tmdbId = item.tmdbId;
+        let mediaType = item.tmdbMediaType || (item.type === 'Serie' ? 'tv' : 'movie');
+
+        if (!tmdbId && item.title) {
+            try {
+                const searchUrl = `https://api.themoviedb.org/3/search/multi?api_key=${encodeURIComponent(tmdbApiKey)}&language=de-DE&query=${encodeURIComponent(item.title)}`;
+                const searchRes = await fetch(searchUrl);
+                if (searchRes.ok) {
+                    const searchData = await searchRes.json();
+                    const match = (searchData.results || []).find(r => r.media_type === 'movie' || r.media_type === 'tv');
+                    if (match) {
+                        tmdbId = match.id;
+                        mediaType = match.media_type;
+                    }
+                }
+            } catch (err) {
+                return null;
+            }
+        }
+
+        if (!tmdbId) return null;
+
+        const languages = ['de-DE', 'en-US'];
+        for (const lang of languages) {
+            try {
+                const vidUrl = `https://api.themoviedb.org/3/${mediaType}/${tmdbId}/videos?api_key=${encodeURIComponent(tmdbApiKey)}&language=${lang}`;
+                const vidRes = await fetch(vidUrl);
+                if (!vidRes.ok) continue;
+                const vidData = await vidRes.json();
+                const videos = vidData.results || [];
+                const ytTrailer =
+                    videos.find(v => v.site === 'YouTube' && v.type === 'Trailer' && v.official) ||
+                    videos.find(v => v.site === 'YouTube' && v.type === 'Trailer') ||
+                    videos.find(v => v.site === 'YouTube' && v.type === 'Teaser') ||
+                    videos.find(v => v.site === 'YouTube');
+                if (ytTrailer) {
+                    return { key: ytTrailer.key, name: ytTrailer.name };
+                }
+            } catch (err) {
+                // Nächste Sprache prüfen
+            }
+        }
+        return null;
+    }
+
+    function toggleTrailerEmbed() {
+        if (!currentTrailerKey) return;
+        const wrapper = document.getElementById('trailerEmbedWrapper');
+        const btn = document.getElementById('detailTrailerEmbedBtn');
+
+        if (wrapper.classList.contains('active')) {
+            wrapper.classList.remove('active');
+            pendingTrailerVideoId = '';
+            resetYtPlayerTarget();
+            btn.textContent = '▶️ Trailer hier abspielen';
+        } else {
+            wrapper.classList.add('active');
+            createOrLoadYtPlayer(currentTrailerKey);
+            btn.textContent = '⏹️ Vorschau schließen';
+        }
+    }
+
+    // Hinzufügen / Bearbeiten Modal
+    function openAddModal() {
+        document.getElementById('mediaForm').reset();
+        document.getElementById('editId').value = '';
+        document.getElementById('tmdbId').value = '';
+        document.getElementById('tmdbMediaType').value = '';
+        document.getElementById('modalTitle').textContent = 'Neues Medium hinzufügen';
+        document.getElementById('tmdbResults').style.display = 'none';
+        document.getElementById('statusMessage').textContent = '';
+        document.getElementById('addModal').classList.add('active');
+        setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
+    }
+
+    function openEditModal(id) {
+        const item = mediaList.find(m => m.id === id);
+        if (!item) return;
+
+        document.getElementById('editId').value = item.id;
+        document.getElementById('tmdbId').value = item.tmdbId || '';
+        document.getElementById('tmdbMediaType').value = item.tmdbMediaType || '';
+        document.getElementById('modalTitle').textContent = 'Medium bearbeiten';
+        document.getElementById('title').value = item.title;
+        document.getElementById('type').value = item.type;
+        document.getElementById('seriesGroup').value = item.seriesGroup || '';
+        document.getElementById('barcode').value = item.barcode || '';
+        document.getElementById('format').value = item.format;
+        document.getElementById('resolution').value = item.resolution;
+        document.getElementById('year').value = item.year || '';
+        document.getElementById('runtime').value = item.runtime || '';
+        document.getElementById('audio').value = item.audio || '';
+        document.getElementById('posterUrl').value = item.posterUrl || '';
+        document.getElementById('overview').value = item.overview || '';
+        document.getElementById('tmdbResults').style.display = 'none';
+        document.getElementById('statusMessage').textContent = '';
+
+        document.getElementById('addModal').classList.add('active');
+    }
+
+    function closeModal(modalId) {
+        if (modalId === 'addModal') {
+            stopCameraScanner();
+        }
+        if (modalId === 'detailModal') {
+            document.getElementById('trailerEmbedWrapper').classList.remove('active');
+            pendingTrailerVideoId = '';
+            resetYtPlayerTarget();
+            currentDetailItem = null;
+        }
+        document.getElementById(modalId).classList.remove('active');
+    }
+
+    function autoSetResolution() {
+        const fmt = document.getElementById('format').value;
+        const resSelect = document.getElementById('resolution');
+        if (fmt === '4K') resSelect.value = '2160p';
+        else if (fmt === 'Blu-ray' || fmt === 'HD-DVD') resSelect.value = '1080p';
+        else if (fmt === 'DVD') resSelect.value = '576p';
+    }
+
+    function saveMedia(e) {
+        e.preventDefault();
+        const editId = document.getElementById('editId').value;
+        const existing = editId ? mediaList.find(m => m.id === editId) : null;
+
+        const mediaObj = {
+            id: editId || Date.now().toString(),
+            title: document.getElementById('title').value.trim(),
+            type: document.getElementById('type').value,
+            seriesGroup: document.getElementById('seriesGroup').value.trim(),
+            barcode: document.getElementById('barcode').value.trim(),
+            format: document.getElementById('format').value,
+            resolution: document.getElementById('resolution').value,
+            year: document.getElementById('year').value.trim(),
+            runtime: document.getElementById('runtime').value.trim(),
+            audio: document.getElementById('audio').value.trim(),
+            posterUrl: document.getElementById('posterUrl').value.trim(),
+            overview: document.getElementById('overview').value.trim(),
+            tmdbId: document.getElementById('tmdbId').value.trim() || (existing ? existing.tmdbId : ''),
+            tmdbMediaType: document.getElementById('tmdbMediaType').value.trim() || (existing ? existing.tmdbMediaType : '')
+        };
+
+        if (editId) {
+            const idx = mediaList.findIndex(m => m.id === editId);
+            if (idx !== -1) mediaList[idx] = mediaObj;
+        } else {
+            mediaList.unshift(mediaObj);
+        }
+
+        saveToLocalStorage();
+        closeModal('addModal');
+        renderMedia();
+    }
+
+    // Handy-Kamera Scanner (BarcodeDetector + ZXing Fallback)
+    async function toggleCameraScanner() {
+        const panel = document.getElementById('cameraScannerPanel');
+        if (panel.classList.contains('active')) {
+            stopCameraScanner();
+        } else {
+            await startCameraScanner();
+        }
+    }
+
+    function stopCameraScanner() {
+        if (cameraScanTimer) {
+            clearInterval(cameraScanTimer);
+            cameraScanTimer = null;
+        }
+        if (zxingReader && typeof zxingReader.reset === 'function') {
+            try {
+                zxingReader.reset();
+            } catch (err) {
+                // Ignorieren
+            }
+        }
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            cameraStream = null;
+        }
+        const video = document.getElementById('cameraVideo');
+        if (video) {
+            video.srcObject = null;
+        }
+        document.getElementById('cameraScannerPanel').classList.remove('active');
+        document.getElementById('cameraToggleBtn').textContent = '📷 Kamera';
+    }
+
+    function loadZxingFallback() {
+        if (window.ZXing && window.ZXing.BrowserMultiFormatReader) {
+            return Promise.resolve(window.ZXing);
+        }
+        if (zxingLoadingPromise) return zxingLoadingPromise;
+
+        zxingLoadingPromise = new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js';
+            script.onload = () => resolve(window.ZXing);
+            script.onerror = () => reject(new Error('ZXing konnte nicht geladen werden'));
+            document.head.appendChild(script);
+        });
+        return zxingLoadingPromise;
+    }
+
+    async function startCameraScanner() {
+        const panel = document.getElementById('cameraScannerPanel');
+        const camStatus = document.getElementById('cameraStatus');
+        const video = document.getElementById('cameraVideo');
+        const toggleBtn = document.getElementById('cameraToggleBtn');
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            camStatus.textContent = '⚠️ Kamera-API nicht verfügbar (nutze HTTPS wie GitHub Pages oder localhost).';
+            panel.classList.add('active');
+            return;
+        }
+
+        panel.classList.add('active');
+        toggleBtn.textContent = '⏹️ Kamera stoppen';
+        camStatus.textContent = '⏳ Starte Rückkamera...';
+
+        try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: { ideal: 'environment' },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                },
+                audio: false
+            });
+            video.srcObject = cameraStream;
+            await video.play();
+        } catch (err) {
+            camStatus.textContent = '⚠️ Kamera-Zugriff verweigert oder fehlgeschlagen. Bitte Berechtigung prüfen.';
+            return;
+        }
+
+        const formats = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39'];
+        if ('BarcodeDetector' in window) {
+            let detector = null;
+            try {
+                const supported = await window.BarcodeDetector.getSupportedFormats();
+                const useFormats = formats.filter(f => supported.includes(f));
+                detector = new window.BarcodeDetector({
+                    formats: useFormats.length > 0 ? useFormats : ['ean_13', 'upc_a']
+                });
+            } catch (err) {
+                detector = null;
+            }
+
+            if (detector) {
+                camStatus.textContent = '🎯 Barcode vor die Kamera halten...';
+                let busy = false;
+                cameraScanTimer = setInterval(async () => {
+                    if (busy || !cameraStream || video.readyState < 2) return;
+                    busy = true;
+                    try {
+                        const barcodes = await detector.detect(video);
+                        if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+                            const code = barcodes[0].rawValue.replace(/\D/g, '');
+                            if (code.length >= 8) {
+                                stopCameraScanner();
+                                document.getElementById('barcodeInput').value = code;
+                                await lookupBarcode();
+                            }
+                        }
+                    } catch (err) {
+                        // Frame überspringen
+                    } finally {
+                        busy = false;
+                    }
+                }, 250);
+                return;
+            }
+        }
+
+        // Fallback für Browser ohne nativen BarcodeDetector
+        try {
+            camStatus.textContent = '⏳ Lade Scanner-Bibliothek...';
+            const ZXing = await loadZxingFallback();
+            zxingReader = new ZXing.BrowserMultiFormatReader();
+            camStatus.textContent = '🎯 Barcode vor die Kamera halten...';
+            await zxingReader.decodeFromVideoElement(video, (result) => {
+                if (result && result.getText) {
+                    const code = result.getText().replace(/\D/g, '');
+                    if (code.length >= 8) {
+                        stopCameraScanner();
+                        document.getElementById('barcodeInput').value = code;
+                        lookupBarcode();
+                    }
+                }
+            });
+        } catch (err) {
+            camStatus.textContent = '⚠️ Automatische Erkennung nicht verfügbar – Barcode manuell oder per Scanner eingeben.';
+        }
+    }
+
+    // Handscanner Logik (Enter abfangen, damit Formular nicht vorzeitig abgeschickt wird)
+    function handleBarcodeKey(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            lookupBarcode();
+        }
+    }
+
+    function getBarcodeVariants(rawCode) {
+        const clean = rawCode.replace(/\D/g, '');
+        const variants = new Set([clean]);
+        if (clean.length === 12) {
+            variants.add('0' + clean); // UPC-A -> EAN-13
+        } else if (clean.length === 13 && clean.startsWith('0')) {
+            variants.add(clean.slice(1)); // EAN-13 mit führender 0 -> UPC-A
+        }
+        return Array.from(variants).filter(Boolean);
+    }
+
+    function queryLocalCollectionBarcode(code) {
+        const match = mediaList.find(m => (m.barcode || '').replace(/\D/g, '') === code);
+        return match ? match.title : '';
+    }
+
+    async function queryWikidataBarcode(code) {
+        const sparql = `
+            SELECT ?itemLabel WHERE {
+              VALUES ?code { "${code}" }
+              { ?item wdt:P3962 ?code. }
+              UNION { ?item wdt:P2278 ?code. }
+              UNION { ?item wdt:P10574 ?code. }
+              UNION { ?item wdt:P957 ?code. }
+              UNION { ?item wdt:P212 ?code. }
+              SERVICE wikibase:label { bd:serviceParam wikibase:language "de,en". }
+            }
+            LIMIT 1
+        `;
+        const wdUrl = `https://query.wikidata.org/sparql?format=json&query=${encodeURIComponent(sparql)}`;
+        const wdRes = await fetch(wdUrl, {
+            headers: { 'Accept': 'application/sparql-results+json' }
+        });
+        if (!wdRes.ok) return '';
+        const wdData = await wdRes.json();
+        return wdData?.results?.bindings?.[0]?.itemLabel?.value || '';
+    }
+
+    async function queryOpenProductsFacts(code) {
+        const url = `https://world.openproductsfacts.org/api/v2/product/${encodeURIComponent(code)}.json`;
+        const res = await fetch(url);
+        if (!res.ok) return '';
+        const data = await res.json();
+        if (data.status === 1 && data.product) {
+            return data.product.product_name_de || data.product.product_name || data.product.generic_name || '';
+        }
+        return '';
+    }
+
+    async function queryOpenLibraryBarcode(code) {
+        const key = `ISBN:${code}`;
+        const url = `https://openlibrary.org/api/books?bibkeys=${encodeURIComponent(key)}&format=json&jscmd=data`;
+        const res = await fetch(url);
+        if (!res.ok) return '';
+        const data = await res.json();
+        return data?.[key]?.title || '';
+    }
+
+    async function queryUpcItemDb(code) {
+        const res = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${encodeURIComponent(code)}`);
+        if (!res.ok) return '';
+        const data = await res.json();
+        if (data.items && data.items.length > 0) {
+            return data.items[0].title || '';
+        }
+        return '';
+    }
+
+    async function lookupBarcode() {
+        const rawInput = document.getElementById('barcodeInput').value.trim();
+        const variants = getBarcodeVariants(rawInput);
+        if (variants.length === 0) return;
+
+        const primaryCode = variants[0];
+        document.getElementById('barcode').value = primaryCode;
+        const status = document.getElementById('statusMessage');
+
+        let foundTitle = '';
+        let foundSource = '';
+
+        // 1. Zuerst in eigener lokaler Sammlung prüfen (komplett offline/kostenlos)
+        for (const variant of variants) {
+            const localTitle = queryLocalCollectionBarcode(variant);
+            if (localTitle) {
+                foundTitle = localTitle;
+                foundSource = 'Eigene Sammlung';
+                break;
+            }
+        }
+
+        // 2. Kostenlose/offene Quellen abfragen
+        if (!foundTitle) {
+            const freeProviders = [
+                { name: 'Wikidata', fn: queryWikidataBarcode },
+                { name: 'Open Products Facts', fn: queryOpenProductsFacts },
+                { name: 'Open Library', fn: queryOpenLibraryBarcode },
+                { name: 'UPCitemdb', fn: queryUpcItemDb }
+            ];
+
+            for (const provider of freeProviders) {
+                for (const variant of variants) {
+                    status.textContent = `⏳ Prüfe ${provider.name} für Barcode ${variant}...`;
+                    try {
+                        const title = await provider.fn(variant);
+                        if (title && title.trim()) {
+                            foundTitle = title.trim();
+                            foundSource = provider.name;
+                            break;
+                        }
+                    } catch (err) {
+                        // Bei Fehler oder Blockierung nächste Quelle/Variante testen
+                    }
+                }
+                if (foundTitle) break;
+            }
+        }
+
+        if (foundTitle) {
+            applyDetectedTitleAndFormat(foundTitle);
+            status.textContent = `✅ Gefunden (${foundSource}): "${foundTitle}". Lade Metadaten & Cover...`;
+            if (tmdbApiKey) {
+                await searchTMDB(true);
+            }
+        } else {
+            status.textContent = `⚠️ Kein Treffer für ${primaryCode} in den kostenlosen Barcode-Quellen. Bitte Titel direkt in der TMDB-Suche eingeben.`;
+            document.getElementById('onlineSearchInput').focus();
+        }
+    }
+
+    function applyDetectedTitleAndFormat(rawTitle) {
+        const cleanTitle = rawTitle
+            .replace(/\[.*?\]|\(.*?\)|Blu-ray|4K|Ultra HD|UHD|HD[\s-]?DVD|DVD|Steelbook|Mediabook|Limited Edition/gi, '')
+            .trim();
+
+        if (/4k|ultra hd|uhd/i.test(rawTitle)) {
+            document.getElementById('format').value = '4K';
+            document.getElementById('resolution').value = '2160p';
+        } else if (/hd[\s-]?dvd/i.test(rawTitle)) {
+            document.getElementById('format').value = 'HD-DVD';
+            document.getElementById('resolution').value = '1080p';
+        } else if (/blu-ray/i.test(rawTitle)) {
+            document.getElementById('format').value = 'Blu-ray';
+            document.getElementById('resolution').value = '1080p';
+        } else if (/dvd/i.test(rawTitle)) {
+            document.getElementById('format').value = 'DVD';
+            document.getElementById('resolution').value = '576p';
+        }
+
+        document.getElementById('title').value = cleanTitle || rawTitle;
+        document.getElementById('onlineSearchInput').value = cleanTitle || rawTitle;
+    }
+
+    // TMDB Suche für Cover, Jahr, Laufzeit & Beschreibung
+    async function searchTMDB(autoSelectFirst = false) {
+        const query = document.getElementById('onlineSearchInput').value.trim();
+        const status = document.getElementById('statusMessage');
+        const resultsContainer = document.getElementById('tmdbResults');
+
+        if (!query) return;
+        if (!tmdbApiKey) {
+            status.textContent = '❌ Bitte hinterlege zuerst deinen TMDB API-Key unter "API & Backup".';
+            return;
+        }
+
+        status.textContent = '⏳ Suche auf TMDB...';
+        try {
+            const url = `https://api.themoviedb.org/3/search/multi?api_key=${tmdbApiKey}&language=de-DE&query=${encodeURIComponent(query)}`;
+            const res = await fetch(url);
+            const data = await res.json();
+
+            const validResults = (data.results || []).filter(r => r.media_type === 'movie' || r.media_type === 'tv');
+
+            if (validResults.length === 0) {
+                status.textContent = 'Keine Treffer auf TMDB gefunden.';
+                resultsContainer.style.display = 'none';
+                return;
+            }
+
+            if (autoSelectFirst) {
+                await selectTMDBItem(validResults[0].id, validResults[0].media_type);
+                return;
+            }
+
+            status.textContent = 'Treffer auswählen, um Daten zu übernehmen:';
+            resultsContainer.innerHTML = validResults.slice(0, 6).map(item => {
+                const title = item.title || item.name;
+                const date = (item.release_date || item.first_air_date || '').slice(0, 4);
+                const poster = item.poster_path ? `https://image.tmdb.org/t/p/w92${item.poster_path}` : fallbackPoster;
+                const typeLabel = item.media_type === 'tv' ? 'Serie' : 'Film';
+                return `
+                    <div class="search-result-item" onclick="selectTMDBItem(${item.id}, '${item.media_type}')">
+                        <img src="${poster}">
+                        <div>
+                            <div style="font-weight: 600; font-size: 0.9rem;">${escapeHtml(title)} (${date || '—'})</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">${typeLabel}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            resultsContainer.style.display = 'block';
+        } catch (err) {
+            status.textContent = '❌ Fehler bei der TMDB-Abfrage. API-Key prüfen.';
+        }
+    }
+
+    async function selectTMDBItem(tmdbId, mediaType) {
+        const status = document.getElementById('statusMessage');
+        status.textContent = '⏳ Lade Details...';
+        try {
+            const url = `https://api.themoviedb.org/3/${mediaType}/${tmdbId}?api_key=${tmdbApiKey}&language=de-DE`;
+            const res = await fetch(url);
+            const details = await res.json();
+
+            document.getElementById('tmdbId').value = String(tmdbId);
+            document.getElementById('tmdbMediaType').value = mediaType;
+            document.getElementById('title').value = details.title || details.name || '';
+            document.getElementById('type').value = mediaType === 'tv' ? 'Serie' : 'Film';
+            
+            const date = details.release_date || details.first_air_date || '';
+            if (date) document.getElementById('year').value = date.slice(0, 4);
+
+            if (mediaType === 'movie' && details.runtime) {
+                document.getElementById('runtime').value = `${details.runtime} Min.`;
+            } else if (mediaType === 'tv' && details.number_of_seasons) {
+                document.getElementById('runtime').value = `${details.number_of_seasons} Staffel(n)`;
+            }
+
+            if (details.belongs_to_collection && details.belongs_to_collection.name) {
+                document.getElementById('seriesGroup').value = details.belongs_to_collection.name.replace(' Filmreihe', '');
+            } else if (mediaType === 'tv') {
+                document.getElementById('seriesGroup').value = details.name;
+            }
+
+            if (details.poster_path) {
+                document.getElementById('posterUrl').value = `https://image.tmdb.org/t/p/w500${details.poster_path}`;
+            }
+
+            document.getElementById('overview').value = details.overview || '';
+            document.getElementById('tmdbResults').style.display = 'none';
+            status.textContent = '✅ Filmdaten & Cover erfolgreich übernommen!';
+        } catch (err) {
+            status.textContent = '❌ Details konnten nicht geladen werden.';
+        }
+    }
+
+    // Einstellungen & JSON Export/Import
+    function openSettingsModal() {
+        document.getElementById('tmdbApiKeyInput').value = tmdbApiKey;
+        document.getElementById('settingsModal').classList.add('active');
+    }
+
+    function saveSettings() {
+        tmdbApiKey = document.getElementById('tmdbApiKeyInput').value.trim();
+        localStorage.setItem('cinevault_tmdb_key', tmdbApiKey);
+        updateApiHint();
+        closeModal('settingsModal');
+    }
+
+    function exportData() {
+        const blob = new Blob([JSON.stringify(mediaList, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `cinevault-backup-${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    async function loadRepoBackupIfPresent() {
+        try {
+            const res = await fetch('./backup.json', { cache: 'no-store' });
+            if (!res.ok) {
+                alert('Keine backup.json im Repository-Verzeichnis gefunden.');
+                return;
+            }
+            const imported = await res.json();
+            if (Array.isArray(imported)) {
+                mediaList = imported;
+                saveToLocalStorage();
+                renderMedia();
+                closeModal('settingsModal');
+                alert(`${imported.length} Medien aus backup.json geladen!`);
+            } else {
+                alert('Die backup.json enthält kein gültiges Medien-Array.');
+            }
+        } catch (err) {
+            alert('Konnte backup.json nicht laden.');
+        }
+    }
+
+    function importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if (Array.isArray(imported)) {
+                    mediaList = imported;
+                    saveToLocalStorage();
+                    renderMedia();
+                    closeModal('settingsModal');
+                    alert(`${imported.length} Medien erfolgreich importiert!`);
+                }
+            } catch (err) {
+                alert('Ungültige JSON-Datei.');
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
+    // Initialisierung
+    updateApiHint();
+    updateSeriesDatalist();
+    renderMedia();
+</script>
+
+</body>
+</html>
