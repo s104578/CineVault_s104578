@@ -1244,14 +1244,23 @@
     }
 
     // Hinzufügen / Bearbeiten Modal
+    function clearAddModalFields() {
+        document.getElementById('barcodeInput').value = '';
+        document.getElementById('onlineSearchInput').value = '';
+        document.getElementById('barcode').value = '';
+        document.getElementById('title').value = '';
+        document.getElementById('statusMessage').textContent = '';
+        document.getElementById('tmdbResults').innerHTML = '';
+        document.getElementById('tmdbResults').style.display = 'none';
+    }
+
     function openAddModal() {
         document.getElementById('mediaForm').reset();
         document.getElementById('editId').value = '';
         document.getElementById('tmdbId').value = '';
         document.getElementById('tmdbMediaType').value = '';
         document.getElementById('modalTitle').textContent = 'Neues Medium hinzufügen';
-        document.getElementById('tmdbResults').style.display = 'none';
-        document.getElementById('statusMessage').textContent = '';
+        clearAddModalFields();
         document.getElementById('addModal').classList.add('active');
         setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
     }
@@ -1264,6 +1273,8 @@
         document.getElementById('tmdbId').value = item.tmdbId || '';
         document.getElementById('tmdbMediaType').value = item.tmdbMediaType || '';
         document.getElementById('modalTitle').textContent = 'Medium bearbeiten';
+        document.getElementById('barcodeInput').value = '';
+        document.getElementById('onlineSearchInput').value = '';
         document.getElementById('title').value = item.title;
         document.getElementById('type').value = item.type;
         document.getElementById('seriesGroup').value = item.seriesGroup || '';
@@ -1275,6 +1286,7 @@
         document.getElementById('audio').value = item.audio || '';
         document.getElementById('posterUrl').value = item.posterUrl || '';
         document.getElementById('overview').value = item.overview || '';
+        document.getElementById('tmdbResults').innerHTML = '';
         document.getElementById('tmdbResults').style.display = 'none';
         document.getElementById('statusMessage').textContent = '';
 
@@ -1284,6 +1296,11 @@
     function closeModal(modalId) {
         if (modalId === 'addModal') {
             stopCameraScanner();
+            document.getElementById('mediaForm').reset();
+            document.getElementById('editId').value = '';
+            document.getElementById('tmdbId').value = '';
+            document.getElementById('tmdbMediaType').value = '';
+            clearAddModalFields();
         }
         if (modalId === 'detailModal') {
             document.getElementById('trailerEmbedWrapper').classList.remove('active');
