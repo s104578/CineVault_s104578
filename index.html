@@ -774,7 +774,7 @@
             <label>TMDB API-Key (v3 auth) für automatische Cover, Filmdaten & YouTube-Trailer:</label>
             <input type="text" id="tmdbApiKeyInput" placeholder="Deinen kostenlosen TMDB API-Key einfügen...">
             <small style="color: var(--text-muted); margin-top: 0.3rem;">
-                Kostenlos erhältlich unter <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer" style="color: var(--accent);">themoviedb.org</a>. Wird nur lokal im Browser gespeichert.
+                Standard-Key ist bereits hinterlegt und auf jedem Gerät aktiv. Änderungen werden lokal im Browser gespeichert.
             </small>
         </div>
         <button class="primary" onclick="saveSettings()" style="width: 100%; justify-content: center; margin-bottom: 1.5rem;">API-Key speichern</button>
@@ -792,6 +792,8 @@
 </div>
 
 <script>
+    const DEFAULT_TMDB_API_KEY = 'b38d8c245d5da2bc8c8583911c3ef733';
+
     // Initialdaten (Beispiele, falls Datenbank leer ist)
     const defaultMedia = [
         {
@@ -845,7 +847,7 @@
     ];
 
     let mediaList = JSON.parse(localStorage.getItem('cinevault_media')) || defaultMedia;
-    let tmdbApiKey = localStorage.getItem('cinevault_tmdb_key') || '';
+    let tmdbApiKey = localStorage.getItem('cinevault_tmdb_key') || DEFAULT_TMDB_API_KEY;
     let sortAscending = true;
     let currentTrailerKey = '';
     let currentDetailItem = null;
@@ -1736,7 +1738,8 @@
     }
 
     function saveSettings() {
-        tmdbApiKey = document.getElementById('tmdbApiKeyInput').value.trim();
+        const enteredKey = document.getElementById('tmdbApiKeyInput').value.trim();
+        tmdbApiKey = enteredKey || DEFAULT_TMDB_API_KEY;
         localStorage.setItem('cinevault_tmdb_key', tmdbApiKey);
         updateApiHint();
         closeModal('settingsModal');
